@@ -1,0 +1,55 @@
+const API_KEY = "AIzaSyD9Az3bBu-AYtkMlU4QcozKp013pbMefB8"; 
+
+function ejecutarAsistenteIA() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const hojaConsola = ss.getSheetByName("Consola_IA");
+  const hojaHistorial = ss.getSheetByName("Historial_IA");
+  const consulta = hojaConsola.getRange("B3").getValue();
+  
+  if (!consulta) {
+    hojaConsola.getRange("B5").setValue("Por favor, ingresá una consulta.");
+    return;
+  }
+
+  hojaConsola.getRange("B5").setValue("Procesando y registrando... ⏳");
+
+  try {
+    // 1. Sincronización dinámica de modelo
+    const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${API_KEY}`;
+    const listJson = JSON.parse(UrlFetchApp.fetch(listUrl).getContentText());
+    const modelo = listJson.models.find(m => m.name.includes("flash")).name;
+
+    // 2. Captura de datos de las tablas
+    const datosPedidos = JSON.stringify(ss.getSheetByName("DB_Pedidos").getDataRange().getValues());
+    const datosStock = JSON.stringify(ss.getSheetByName("DB_Stock").getDataRange().getValues());
+
+    // 3. Llamada a la IA con instrucción de formato
+    const url = `https://generativelanguage.googleapis.com/v1beta/${modelo}:generateContent?key=${API_KEY}`;
+    const prompt = `Actúa como asistente operativo de administración. 
+    Datos Pedidos: ${datosPedidos}. Datos Stock: ${datosStock}. 
+    Consulta: ${consulta}. 
+    Regla: Si redactas un mail, usá el prefijo "BORRADOR_GMAIL:" al inicio del cuerpo del mail.`;
+
+    const payload = { "contents": [{ "parts": [{ "text": prompt }] }] };
+    const response = UrlFetchApp.fetch(url, { "method": "post", "contentType": "application/json", "payload": JSON.stringify(payload) });
+    const respuestaIA = JSON.parse(response.getContentText()).candidates[0].content.parts[0].text;
+
+    // 4. Ejecución de acciones y Registro (LOG)
+    let accionEfectuada = "Consulta respondida";
+    hojaConsola.getRange("B5").setValue(respuestaIA);
+
+    if (respuestaIA.includes("BORRADOR_GMAIL:")) {
+      const contenidoMail = respuestaIA.split("BORRADOR_GMAIL:")[1];
+      GmailApp.createDraft("cliente@ejemplo.com", "Información sobre su pedido", contenidoMail);
+      accionEfectuada = "Borrador de Gmail creado";
+      hojaConsola.getRange("B5").setValue(respuestaIA + "\n\n✅ ¡Historial guardado y Borrador creado!");
+    }
+
+    // 5. GUARDAR EN LA HOJA DE HISTORIAL (Trazabilidad)
+    hojaHistorial.appendRow([new Date(), consulta, respuestaIA, accionEfectuada]);
+
+  } catch (e) {
+    hojaConsola.getRange("B5").setValue("Error: " + e.toString());
+    hojaHistorial.appendRow([new Date(), consulta, "ERROR: " + e.toString(), "Fallo en ejecución"]);
+  }
+}
