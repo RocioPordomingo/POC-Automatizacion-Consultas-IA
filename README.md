@@ -201,8 +201,6 @@ Como resultado de la operación, se generó automáticamente un borrador en la c
 - **Asunto**: Información sobre su pedido.
 - **Cuerpo**: Un mensaje estructurado que explica la falta de stock temporal, solicita disculpas y establece el compromiso de contacto para una nueva fecha de entrega.
 
-![Documentación de la POC_ Automatización de Consultas con IA - Hojas de cálculo de Google - Google Chrome 7_4_2026 15_04_51.png](Documentacin_de_la_POC__Automatizacin_de_Consultas_con_IA_-_Hojas_de_clculo_de_Google_-_Google_Chrome_7_4_2026_15_04_51.png)
-
 ### **4. Valor Agregado Identificado**
 
 - **Eliminación de la Redacción Manual**: El equipo operativo ahorra el tiempo de redactar correos desde cero ante incidencias recurrentes.
